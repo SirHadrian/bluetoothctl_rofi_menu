@@ -17,35 +17,56 @@ Y_OFFSET=50
 FONT="JetBrainsMono Nerd Font 10"
 #==========================================================
 
-CONTROLLER_INFO="$(bluetoothctl show)"
+bluetooth_check() {
 
-if [[ "$(systemctl is-active "bluetooth.service")" =~ "inactive" ]]; then
-	printf "%s" "  Service Down "
-	exit 1
-fi
+	CONNECTED="$(bluetoothctl devices Connected | awk '{print $3}')"
+	if [[ -z "$CONNECTED" ]]; then
+		printf " %s " ""
+	else
+		printf " %s %s" "" "$CONNECTED"
+	fi
 
-DEVICES="$(bluetoothctl devices Paired | awk '{print $3,$2}')"
+	if [[ "$(systemctl is-active "bluetooth.service")" =~ "inactive" ]]; then
+		printf "%s" "  Service Down "
+	fi
 
-SELECTED="$(printf "%s" "$DEVICES" | rofi -dmenu -p "Devices: " -matching regex -config "$SCRIPTPATH/bluetoothctl_config.rasi" -location "$POSITION" -yoffset "$Y_OFFSET" -xoffset "$X_OFFSET" -font "$FONT")"
+}
 
-# Exit if no device is selected
-[[ -z "$SELECTED" ]] && exit 1
+bluetooth_click() {
 
-SELECTED_NAME="$(printf "%s" "$SELECTED" | awk '{print $1}')"
-SELECTED_ID="$(printf "%s" "$SELECTED" | awk '{print $2}')"
+	CONTROLLER_INFO="$(bluetoothctl show)"
 
-STATUS="$(bluetoothctl info "$SELECTED_ID")"
+	DEVICES="$(bluetoothctl devices Paired | awk '{print $3,$2}')"
 
-if printf "%s" "$STATUS" | rg -q "Connected: yes"; then
-	SELECTED_NAME="${SELECTED_NAME} (Connected)"
-fi
+	SELECTED="$(printf "%s" "$DEVICES" | rofi -dmenu -p "Devices: " -matching regex -config "$SCRIPTPATH/bluetoothctl_config.rasi" -location "$POSITION" -yoffset "$Y_OFFSET" -xoffset "$X_OFFSET" -font "$FONT")"
 
-ACTION="$(printf "%s\n%s" "Connect" "Disconnect" | rofi -dmenu -p "$SELECTED_NAME" -matching regex -config "$SCRIPTPATH/bluetoothctl_config.rasi" -location "$POSITION" -yoffset "$Y_OFFSET" -xoffset "$X_OFFSET" -font "$FONT")"
+	# Exit if no device is selected
+	[[ -z "$SELECTED" ]] && exit 1
 
-if [[ "$ACTION" =~ "Connect" ]]; then
-	bluetoothctl connect "$SELECTED_ID"
-	printf " %s %s" "" "$SELECTED_NAME"
-elif [[ "$ACTION" =~ "Disconnect" ]]; then
-	bluetoothctl disconnect "$SELECTED_ID"
-	printf " %s " ""
-fi
+	SELECTED_NAME="$(printf "%s" "$SELECTED" | awk '{print $1}')"
+	SELECTED_ID="$(printf "%s" "$SELECTED" | awk '{print $2}')"
+
+	STATUS="$(bluetoothctl info "$SELECTED_ID")"
+
+	if printf "%s" "$STATUS" | rg -q "Connected: yes"; then
+		SELECTED_NAME="${SELECTED_NAME} (Connected)"
+	fi
+
+	ACTION="$(printf "%s\n%s" "Connect" "Disconnect" | rofi -dmenu -p "$SELECTED_NAME" -matching regex -config "$SCRIPTPATH/bluetoothctl_config.rasi" -location "$POSITION" -yoffset "$Y_OFFSET" -xoffset "$X_OFFSET" -font "$FONT")"
+
+	if [[ "$ACTION" =~ "Connect" ]]; then
+		bluetoothctl connect "$SELECTED_ID"
+	elif [[ "$ACTION" =~ "Disconnect" ]]; then
+		bluetoothctl disconnect "$SELECTED_ID"
+	fi
+
+}
+
+case "$1" in
+--click)
+	bluetooth_click
+	;;
+*)
+	bluetooth_check
+	;;
+esac
