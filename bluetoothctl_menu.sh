@@ -17,6 +17,13 @@ Y_OFFSET=50
 FONT="JetBrainsMono Nerd Font 10"
 #==========================================================
 
+CONTROLLER_INFO="$(bluetoothctl show)"
+
+if [[ "$(systemctl is-active "bluetooth.service")" =~ "inactive" ]]; then
+	printf "%s" "  Service Down "
+	exit 1
+fi
+
 DEVICES="$(bluetoothctl devices Paired | awk '{print $3,$2}')"
 
 SELECTED="$(printf "%s" "$DEVICES" | rofi -dmenu -p "Devices: " -matching regex -config "$SCRIPTPATH/bluetoothctl_config.rasi" -location "$POSITION" -yoffset "$Y_OFFSET" -xoffset "$X_OFFSET" -font "$FONT")"
