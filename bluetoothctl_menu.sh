@@ -58,23 +58,23 @@ bluetooth_power() {
 
 device_submenu() {
 
-	SELECTED="$1"
+	DEVICE="$1"
 
-	SELECTED_NAME="$(printf "%s" "$SELECTED" | awk '{print $1}')"
-	SELECTED_ID="$(printf "%s" "$SELECTED" | awk '{print $2}')"
+	DEVICE_NAME="$(printf "%s" "$DEVICE" | awk '{print $1}')"
+	DEVICE_ID="$(printf "%s" "$DEVICE" | awk '{print $2}')"
 
-	STATUS="$(bluetoothctl info "$SELECTED_ID")"
+	STATUS="$(bluetoothctl info "$DEVICE_ID")"
 
 	if printf "%s" "$STATUS" | rg -q "Connected: yes"; then
-		SELECTED_NAME="${SELECTED_NAME} (Connected)"
+		DEVICE_NAME="${SELECTED_NAME} (Connected)"
 	fi
 
-	ACTION="$(printf "%s\n%s" "Connect" "Disconnect" | rofi -dmenu -p "$SELECTED_NAME" -matching regex -config "$SCRIPTPATH/bluetoothctl_config.rasi" -location "$POSITION" -yoffset "$Y_OFFSET" -xoffset "$X_OFFSET" -font "$FONT")"
+	ACTION="$(printf "%s\n%s" "Connect" "Disconnect" | rofi -dmenu -p "$DEVICE_NAME" -matching regex -config "$SCRIPTPATH/bluetoothctl_config.rasi" -location "$POSITION" -yoffset "$Y_OFFSET" -xoffset "$X_OFFSET" -font "$FONT")"
 
 	if [[ "$ACTION" =~ "Connect" ]]; then
-		bluetoothctl connect "$SELECTED_ID"
+		bluetoothctl connect "$DEVICE_ID"
 	elif [[ "$ACTION" =~ "Disconnect" ]]; then
-		bluetoothctl disconnect "$SELECTED_ID"
+		bluetoothctl disconnect "$DEVICE_ID"
 	fi
 
 }
@@ -83,28 +83,28 @@ bluetooth_click() {
 
 	EXIT="Exit"
 
-	DEVICES="$(bluetoothctl devices Paired | awk '{print $3,$2}')"
+	DEVICES_LIST="$(bluetoothctl devices Paired | awk '{print $3,$2}')"
 
 	if bluetoothctl show | rg -q "Powered: yes"; then
 		POWER="Power: OFF"
-		OPTIONS="$DEVICES\n\n$POWER\n$EXIT"
+		OPTIONS="$DEVICES_LIST\n\n$POWER\n$EXIT"
 	else
 		POWER="Power: ON"
 		OPTIONS="$POWER\n$EXIT"
 	fi
 
-	SELECTED="$(printf "%b" "$OPTIONS" | rofi -dmenu -p "Devices: " -matching regex -config "$SCRIPTPATH/bluetoothctl_config.rasi" -location "$POSITION" -yoffset "$Y_OFFSET" -xoffset "$X_OFFSET" -font "$FONT")"
+	SELECTED_DEVICE="$(printf "%b" "$OPTIONS" | rofi -dmenu -p "Devices: " -matching regex -config "$SCRIPTPATH/bluetoothctl_config.rasi" -location "$POSITION" -yoffset "$Y_OFFSET" -xoffset "$X_OFFSET" -font "$FONT")"
 
 	# Exit if no device is selected
-	[[ -z "$SELECTED" ]] && exit 1
+	[[ -z "$SELECTED_DEVICE" ]] && exit 1
 
-	if [[ "$SELECTED" == "$POWER" ]]; then
+	if [[ "$SELECTED_DEVICE" == "$POWER" ]]; then
 		bluetooth_power
 		exit 0
-	elif [[ "$SELECTED" == "$EXIT" ]]; then
+	elif [[ "$SELECTED_DEVICE" == "$EXIT" ]]; then
 		exit 0
 	else
-		device_submenu "$SELECTED"
+		device_submenu "$SELECTED_DEVICE"
 	fi
 
 }
