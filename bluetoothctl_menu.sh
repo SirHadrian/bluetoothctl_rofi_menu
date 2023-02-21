@@ -21,16 +21,15 @@ DEVICES="$(bluetoothctl devices Paired | awk '{print $3,$2}')"
 
 SELECTED="$(printf "%s" "$DEVICES" | rofi -dmenu -p "Devices: " -matching regex -config "$SCRIPTPATH/bluetoothctl_config.rasi" -location "$POSITION" -yoffset "$Y_OFFSET" -xoffset "$X_OFFSET" -font "$FONT")"
 
-SELECTED_NAME="$(printf "%s" "$SELECTED" | awk '{print $1}')"
-
 # Exit if no device is selected
-[[ -z "$SELECTED_NAME" ]] && exit 1
+[[ -z "$SELECTED" ]] && exit 1
 
+SELECTED_NAME="$(printf "%s" "$SELECTED" | awk '{print $1}')"
 SELECTED_ID="$(printf "%s" "$SELECTED" | awk '{print $2}')"
 
-STATUS="$(bluetoothctl info "$SELECTED_ID" | rg 'Connected' | awk '{print $2}')"
+STATUS="$(bluetoothctl info "$SELECTED_ID")"
 
-if [[ "$STATUS" =~ "yes" ]]; then
+if printf "%s" "$STATUS" | rg -q "Connected: yes"; then
 	SELECTED_NAME="${SELECTED_NAME} (Connected)"
 fi
 
