@@ -50,7 +50,8 @@ bluetooth_power() {
 		bluetoothctl power off
 	else
 		if rfkill list bluetooth | rg -q 'blocked: yes'; then
-			rfkill unblock bluetooth && sleep 3
+			rfkill unblock bluetooth
+			sleep 2
 		fi
 		bluetoothctl power on
 	fi
@@ -66,15 +67,21 @@ device_submenu() {
 	STATUS="$(bluetoothctl info "$DEVICE_ID")"
 
 	if printf "%s" "$STATUS" | rg -q "Connected: yes"; then
-		DEVICE_NAME="${SELECTED_NAME} (Connected)"
+		DEVICE_NAME="${DEVICE_NAME} (Connected)"
 	fi
 
-	ACTION="$(printf "%s\n%s" "Connect" "Disconnect" | rofi -dmenu -p "$DEVICE_NAME" -matching regex -config "$SCRIPTPATH/bluetoothctl_config.rasi" -location "$POSITION" -yoffset "$Y_OFFSET" -xoffset "$X_OFFSET" -font "$FONT")"
+	ACTION="$(printf "%s\n%s\n\n%s\n%s" "Connect" "Disconnect" "Back" "Exit" | rofi -dmenu -p "$DEVICE_NAME" -matching regex -config "$SCRIPTPATH/bluetoothctl_config.rasi" -location "$POSITION" -yoffset "$Y_OFFSET" -xoffset "$X_OFFSET" -font "$FONT")"
+
+	[[ -z "$ACTION" ]] && exit 1
 
 	if [[ "$ACTION" =~ "Connect" ]]; then
 		bluetoothctl connect "$DEVICE_ID"
 	elif [[ "$ACTION" =~ "Disconnect" ]]; then
 		bluetoothctl disconnect "$DEVICE_ID"
+	elif [[ "$ACTION" =~ "Back" ]]; then
+		bluetooth_click
+	elif [[ "$ACTION" =~ "Exit" ]]; then
+		exit 0
 	fi
 
 }
@@ -86,10 +93,10 @@ bluetooth_click() {
 	DEVICES_LIST="$(bluetoothctl devices Paired | awk '{print $3,$2}')"
 
 	if bluetoothctl show | rg -q "Powered: yes"; then
-		POWER="Power: OFF"
+		POWER="Power OFF"
 		OPTIONS="$DEVICES_LIST\n\n$POWER\n$EXIT"
 	else
-		POWER="Power: ON"
+		POWER="Power ON"
 		OPTIONS="$POWER\n$EXIT"
 	fi
 
