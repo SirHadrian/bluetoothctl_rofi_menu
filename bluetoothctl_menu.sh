@@ -24,8 +24,10 @@ SELECTED="$(printf "%s" "$DEVICES" | rofi -dmenu -p "Devices: " -matching regex 
 SELECTED_NAME="$(printf "%s" "$SELECTED" | awk '{print $1}')"
 SELECTED_ID="$(printf "%s" "$SELECTED" | awk '{print $2}')"
 
-CONNECT="$(printf "%s\n%s" "Connect" "Disconnect" | rofi -dmenu -p "$SELECTED_NAME" -matching regex -config "$SCRIPTPATH/bluetoothctl_config.rasi" -location "$POSITION" -yoffset "$Y_OFFSET" -xoffset "$X_OFFSET" -font "$FONT")"
+ACTION="$(printf "%s\n%s" "Connect" "Disconnect" | rofi -dmenu -p "$SELECTED_NAME" -matching regex -config "$SCRIPTPATH/bluetoothctl_config.rasi" -location "$POSITION" -yoffset "$Y_OFFSET" -xoffset "$X_OFFSET" -font "$FONT")"
 
-if [[ "$CONNECT" =~ "Connect" ]]; then
-	printf "%s" "working"
+if [[ "$ACTION" =~ "Connect" ]]; then
+	bluetoothctl connect "$SELECTED_ID"
+elif [[ "$ACTION" =~ "Disconnect" ]]; then
+	bluetoothctl disconnect "$SELECTED_ID"
 fi
