@@ -23,7 +23,7 @@ bluetooth_check() {
 	if [[ -z "$CONNECTED" ]]; then
 		printf " %s " ""
 	else
-		printf " %s %s" "" "$CONNECTED"
+		printf " %s %s " "" "$CONNECTED"
 	fi
 
 	if [[ "$(systemctl is-active "bluetooth.service")" =~ "inactive" ]]; then
@@ -41,7 +41,14 @@ is_powered() {
 }
 
 bluetooth_power() {
-
+	if is_powered; then
+		bluetoothctl power off
+	else
+		if rfkill list bluetooth | rg -q 'blocked: yes'; then
+			rfkill unblock bluetooth && sleep 3
+		fi
+		bluetoothctl power on
+	fi
 }
 
 bluetooth_click() {
@@ -50,7 +57,14 @@ bluetooth_click() {
 
 	DEVICES="$(bluetoothctl devices Paired | awk '{print $3,$2}')"
 
-	SELECTED="$(printf "%s" "$DEVICES" | rofi -dmenu -p "Devices: " -matching regex -config "$SCRIPTPATH/bluetoothctl_config.rasi" -location "$POSITION" -yoffset "$Y_OFFSET" -xoffset "$X_OFFSET" -font "$FONT")"
+	POWER="Power: "
+	if "$CONTROLLER_INFO" | rg -q "Powered: yes"; then
+		POWER="${POWER}ON"
+	else
+		POWER="${POWER}OFF"
+	fi
+
+	SELECTED="$(printf "%s\n\n%s" "$POWER" "$DEVICES" | rofi -dmenu -p "Devices: " -matching regex -config "$SCRIPTPATH/bluetoothctl_config.rasi" -location "$POSITION" -yoffset "$Y_OFFSET" -xoffset "$X_OFFSET" -font "$FONT")"
 
 	# Exit if no device is selected
 	[[ -z "$SELECTED" ]] && exit 1
