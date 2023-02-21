@@ -69,7 +69,7 @@ device_submenu() {
 		DEVICE_NAME="${SELECTED_NAME} (Connected)"
 	fi
 
-	ACTION="$(printf "%s\n%s" "Connect" "Disconnect" | rofi -dmenu -p "$DEVICE_NAME" -matching fuzzy -config "$SCRIPTPATH/bluetoothctl_config.rasi" -location "$POSITION" -yoffset "$Y_OFFSET" -xoffset "$X_OFFSET" -font "$FONT")"
+	ACTION="$(printf "%s\n%s" "Connect" "Disconnect" | rofi -dmenu -p "$DEVICE_NAME" -matching regex -config "$SCRIPTPATH/bluetoothctl_config.rasi" -location "$POSITION" -yoffset "$Y_OFFSET" -xoffset "$X_OFFSET" -font "$FONT")"
 
 	if [[ "$ACTION" =~ "Connect" ]]; then
 		bluetoothctl connect "$DEVICE_ID"
@@ -93,7 +93,7 @@ bluetooth_click() {
 		OPTIONS="$POWER\n$EXIT"
 	fi
 
-	SELECTED="$(printf "%b" "$OPTIONS" | rofi -dmenu -p "Devices: " -matching fuzzy -config "$SCRIPTPATH/bluetoothctl_config.rasi" -location "$POSITION" -yoffset "$Y_OFFSET" -xoffset "$X_OFFSET" -font "$FONT")"
+	SELECTED="$(printf "%b" "$OPTIONS" | rofi -dmenu -p "Devices: " -matching regex -config "$SCRIPTPATH/bluetoothctl_config.rasi" -location "$POSITION" -yoffset "$Y_OFFSET" -xoffset "$X_OFFSET" -font "$FONT")"
 
 	# Exit if no device is selected
 	[[ -z "$SELECTED" ]] && exit 1
