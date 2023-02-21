@@ -32,6 +32,18 @@ bluetooth_check() {
 
 }
 
+is_powered() {
+	if bluetoothctl show | rg -q "Powered: yes"; then
+		return 0
+	else
+		return 1
+	fi
+}
+
+bluetooth_power() {
+
+}
+
 bluetooth_click() {
 
 	CONTROLLER_INFO="$(bluetoothctl show)"
