@@ -17,6 +17,14 @@ Y_OFFSET=50
 FONT="JetBrainsMono Nerd Font 10"
 #==========================================================
 
+# Constants
+# ==============================
+EXIT="Exit"
+BACK="Back"
+CONNECT="Connect"
+DISCONNECT="Disconnect"
+# ==============================
+
 bluetooth_check() {
 
 	if [[ "$(systemctl is-active "bluetooth.service")" =~ "inactive" ]]; then
@@ -70,25 +78,23 @@ device_submenu() {
 		DEVICE_NAME="${DEVICE_NAME} (Connected)"
 	fi
 
-	ACTION="$(printf "%s\n%s\n\n%s\n%s" "Connect" "Disconnect" "Back" "Exit" | rofi -dmenu -p "$DEVICE_NAME" -matching regex -config "$SCRIPTPATH/bluetoothctl_config.rasi" -location "$POSITION" -yoffset "$Y_OFFSET" -xoffset "$X_OFFSET" -font "$FONT")"
+	ACTION="$(printf "%s\n%s\n\n%s\n%s" "$CONNECT" "$DISCONNECT" "$BACK" "$EXIT" | rofi -dmenu -p "$DEVICE_NAME" -matching regex -config "$SCRIPTPATH/bluetoothctl_config.rasi" -location "$POSITION" -yoffset "$Y_OFFSET" -xoffset "$X_OFFSET" -font "$FONT")"
 
 	[[ -z "$ACTION" ]] && exit 1
 
-	if [[ "$ACTION" =~ "Connect" ]]; then
+	if [[ "$ACTION" == "$CONNECT" ]]; then
 		bluetoothctl connect "$DEVICE_ID"
-	elif [[ "$ACTION" =~ "Disconnect" ]]; then
+	elif [[ "$ACTION" == "$DISCONNECT" ]]; then
 		bluetoothctl disconnect "$DEVICE_ID"
-	elif [[ "$ACTION" =~ "Back" ]]; then
+	elif [[ "$ACTION" == "$BACK" ]]; then
 		bluetooth_click
-	elif [[ "$ACTION" =~ "Exit" ]]; then
+	elif [[ "$ACTION" == "$EXIT" ]]; then
 		exit 0
 	fi
 
 }
 
 bluetooth_click() {
-
-	EXIT="Exit"
 
 	DEVICES_LIST="$(bluetoothctl devices Paired | awk '{print $3,$2}')"
 
