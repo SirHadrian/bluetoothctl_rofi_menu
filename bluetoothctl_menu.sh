@@ -19,17 +19,22 @@ FONT="JetBrainsMono Nerd Font 10"
 
 bluetooth_check() {
 
+	if [[ "$(systemctl is-active "bluetooth.service")" =~ "inactive" ]]; then
+		printf "%s" "  Service Down "
+		exit 0
+	fi
+
+	if bluetoothctl show | rg -q "Powered: no"; then
+		printf " %s " ""
+		exit 0
+	fi
+
 	CONNECTED="$(bluetoothctl devices Connected | awk '{print $3}')"
 	if [[ -z "$CONNECTED" ]]; then
 		printf " %s " ""
 	else
 		printf " %s %s " "" "$CONNECTED"
 	fi
-
-	if [[ "$(systemctl is-active "bluetooth.service")" =~ "inactive" ]]; then
-		printf "%s" "  Service Down "
-	fi
-
 }
 
 is_powered() {
@@ -51,23 +56,9 @@ bluetooth_power() {
 	fi
 }
 
-bluetooth_click() {
+device_submenu() {
 
-	CONTROLLER_INFO="$(bluetoothctl show)"
-
-	DEVICES="$(bluetoothctl devices Paired | awk '{print $3,$2}')"
-
-	POWER="Power: "
-	if "$CONTROLLER_INFO" | rg -q "Powered: yes"; then
-		POWER="${POWER}ON"
-	else
-		POWER="${POWER}OFF"
-	fi
-
-	SELECTED="$(printf "%s\n\n%s" "$POWER" "$DEVICES" | rofi -dmenu -p "Devices: " -matching regex -config "$SCRIPTPATH/bluetoothctl_config.rasi" -location "$POSITION" -yoffset "$Y_OFFSET" -xoffset "$X_OFFSET" -font "$FONT")"
-
-	# Exit if no device is selected
-	[[ -z "$SELECTED" ]] && exit 1
+	SELECTED="$1"
 
 	SELECTED_NAME="$(printf "%s" "$SELECTED" | awk '{print $1}')"
 	SELECTED_ID="$(printf "%s" "$SELECTED" | awk '{print $2}')"
@@ -84,6 +75,36 @@ bluetooth_click() {
 		bluetoothctl connect "$SELECTED_ID"
 	elif [[ "$ACTION" =~ "Disconnect" ]]; then
 		bluetoothctl disconnect "$SELECTED_ID"
+	fi
+
+}
+
+bluetooth_click() {
+
+	EXIT="Exit"
+
+	DEVICES="$(bluetoothctl devices Paired | awk '{print $3,$2}')"
+
+	if bluetoothctl show | rg -q "Powered: yes"; then
+		POWER="Power: OFF"
+		OPTIONS="$DEVICES\n\n$POWER\n$EXIT"
+	else
+		POWER="Power: ON"
+		OPTIONS="$POWER\n$EXIT"
+	fi
+
+	SELECTED="$(printf "%b" "$OPTIONS" | rofi -dmenu -p "Devices: " -matching regex -config "$SCRIPTPATH/bluetoothctl_config.rasi" -location "$POSITION" -yoffset "$Y_OFFSET" -xoffset "$X_OFFSET" -font "$FONT")"
+
+	# Exit if no device is selected
+	[[ -z "$SELECTED" ]] && exit 1
+
+	if [[ "$SELECTED" == "$POWER" ]]; then
+		bluetooth_power
+		exit 0
+	elif [[ "$SELECTED" == "$EXIT" ]]; then
+		exit 0
+	else
+		device_submenu "$SELECTED"
 	fi
 
 }
